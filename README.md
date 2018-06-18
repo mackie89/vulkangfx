@@ -10,3 +10,4 @@ was used to get to the inital commit, but with some additonal code changes and s
 Future Plans is to make the project capable of rendering an entire world/level with lots of models and multiple gfx effects.
 
 As I'm new to gfx any suggested improvements are welcome.
+
