@@ -12,6 +12,9 @@
 #include "IRenderer.hpp"
 #include "VulkanCommon.hpp"
 
+class VulkanModel;
+class VulkanTexture;
+
 class VulkanRenderer : public IRenderer
 {
 public:
@@ -24,6 +27,12 @@ public:
     
     void WaitForSafeShutdown() override;
     
+    static VulkanRenderer* GetInstance() { return ourInstance; }
+    
+    VkCommandPool&       GetCommandPool() { return m_CommandPool; }
+    VkPhysicalDevice&    GetPhysicalDevice() { return m_PhysicalDevice; }
+    VkDevice&            GetLogicalDevice() { return m_Device; }
+    VkQueue&             GetGraphicsQueue() { return m_GraphicsQueue; }
 private:
     static const int MAX_FRAMES_IN_FLIGHT = 2;
     
@@ -45,12 +54,9 @@ private:
     bool CreateCommandPool();
     bool CreateDepthResources();
     bool CreateFrameBuffers();
-    bool CreateTextureImage();
-    bool CreateTextureImageView();
-    bool CreateTextureSampler();
-    bool CreateModelFromFile();
-    bool CreateVertexBuffer();
-    bool CreateIndexBuffer();
+    bool CreateTextures();
+    bool CreateSamplers();
+    bool CreateModels();
     bool CreateConstantBuffer();
     bool CreateDescriptorPool();
     bool CreateDescriptorSet();
@@ -59,6 +65,8 @@ private:
     
     bool CleanupSwapChain();
     bool RecreateSwapChain();
+    void DeleteModels();
+    void DeleteTextures();
     
     bool SelectPhysicalDevice();
 
@@ -73,27 +81,9 @@ private:
     VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
     VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
     
-    uint32_t FindMemoryType(uint32_t aTypeFilter, VkMemoryPropertyFlags someProperties);
     uint32_t FindSupportedFormat(const std::vector<VkFormat>& someCandidates, VkImageTiling aTiling, VkFormatFeatureFlags aFeatures);
     
     bool FindDepthFormat(VkFormat& outFormat);
-    bool HasStencilComponent(const VkFormat& aFormat);
-    
-    bool CreateImageView(VkImage anImage, VkFormat aFormat, VkImageAspectFlags anAspectFlags, VkImageView& anImageView, uint32_t aMipLvl);
-    bool CreateImage(uint32_t aWidth, uint32_t aHeight, uint32_t aMipLvl, VkFormat aFormat, VkImageTiling aTiling,
-                     VkImageUsageFlags aUsage, VkMemoryPropertyFlags aProperties, VkImage& anImage, VkDeviceMemory& anImageMemory);
-    
-    void GenerateMipmaps(VkImage& anImage, int32_t aTexWidth, int32_t aTexHeight, uint32_t aMipLevels);
-    
-    bool CreateBuffer(VkDeviceSize aSize, VkBufferUsageFlags aUsage, VkMemoryPropertyFlags someProperties, VkBuffer& aBuffer, VkDeviceMemory& aBufferMemory);
-
-    void CopyBuffer(VkBuffer aSrcBuffer, VkBuffer aDstBuffer, VkDeviceSize aSize);
-    void CopyBufferToImage(VkBuffer aBuffer, VkImage anImage, uint32_t aWidth, uint32_t aHeight);
-    
-    VkCommandBuffer BeginSingleTimeCommands();
-    void EndSingleTimeCommands(VkCommandBuffer& aCommandBuffer);
-    
-    bool TransitionImageLayout(VkImage anImage, VkFormat aFormat, VkImageLayout anOldLayout, VkImageLayout aNewLayout, uint32_t aMipLvl);
     
     void UpdateConstantBuffer(uint32_t aFrameOffset);
     void DrawFrame();
@@ -115,6 +105,8 @@ private:
     std::vector<VkImage>            m_SwapChainImages;
     std::vector<VkImageView>        m_SwapChainImageViews;
     std::vector<VkFramebuffer>      m_SwapChainFramebuffers;
+    uint32_t                        m_SwapChainCount;
+    
 
     VkRenderPass                    m_RenderPass;
     VkDescriptorSetLayout           m_DescriptorSetLayout;
@@ -129,14 +121,6 @@ private:
     SwapChainLocks  m_SwapChainLocks[MAX_FRAMES_IN_FLIGHT];
     int             m_CurrentFrame;
     
-    std::vector<PositionColorVertex>    m_ModelVertices;
-    std::vector<uint32_t>               m_ModelIndices;
-    uint32_t                            m_ModelIndexCount;
-    VkBuffer                            m_ModelVertexBuffer;
-    VkBuffer                            m_ModelIndexBuffer;
-    VkDeviceMemory                      m_ModelVertexBufferMemory;
-    VkDeviceMemory                      m_ModelIndexBufferMemory;
-    
     VkBuffer        m_ConstantBuffer;
     VkDeviceMemory  m_ConstantBufferMemory;
     VkDeviceSize    m_MinConstantBufferSize;
@@ -146,16 +130,17 @@ private:
     VkDeviceMemory  m_DepthImageMemory;
     VkFormat        m_DepthFormat;
     
-    //textures
-    uint32_t        m_TextureMipLevels;
-    VkImage         m_TextureImage;
-    VkImageView     m_TextureImageView;
-    VkDeviceMemory  m_TextureImageMemory;
-    VkSampler       m_TextureSampler;
-
+    //textures & samplers
+    VulkanTexture*  m_HouseTexture;
+    VkSampler       m_HouseTextureSampler;
+    
+    //models
+    VulkanModel*    m_HouseModel;
+    
     bool m_VKInstCreated;
     bool m_VKDeviceCreated;
     
+    static VulkanRenderer* ourInstance;
 #ifdef _DEBUG
     bool SetupDebugCallback();
     VkDebugReportCallbackEXT m_DebugCallback;
