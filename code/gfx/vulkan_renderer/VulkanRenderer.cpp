@@ -15,8 +15,10 @@
 #include "Core_Utils.hpp"
 #include "GLWindow.hpp"
 
-const std::string MODEL_PATH = "models/chalet.obj";
-const std::string TEXTURE_PATH = "textures/chalet.jpg";
+const char* MODEL_PATH = "../data/models/chalet.obj";
+const char* TEXTURE_PATH = "../data/textures/chalet.jpg";
+const char* VERT_SHADER_PATH = "../data/shaders/compiled/vert.spv";
+const char* FRAG_SHADER_PATH = "../data/shaders/compiled/frag.spv";
 
 VulkanRenderer* VulkanRenderer::ourInstance = nullptr;
 
@@ -775,14 +777,14 @@ bool VulkanRenderer::CreateGraphicsPipeline()
     VkShaderModule vertShaderModule;
     VkShaderModule fragShaderModule;
     
-    VulkanShader vertShader = VulkanShader("shaders/vert.spv");
+    VulkanShader vertShader = VulkanShader(VERT_SHADER_PATH);
     
     if(vertShader.Load())
         created &= vertShader.CreateShaderModule(m_Device, vertShaderModule);
     else
         return false;
     
-    VulkanShader fragShader = VulkanShader("shaders/frag.spv");
+    VulkanShader fragShader = VulkanShader(FRAG_SHADER_PATH);
     
     if(fragShader.Load())
         created &= fragShader.CreateShaderModule(m_Device, fragShaderModule);
@@ -1006,7 +1008,7 @@ bool VulkanRenderer::CreateTextures()
 {
     SCOPE_FUNCTION_MILLI();
     
-    m_HouseTexture = new VulkanTexture(TEXTURE_PATH.c_str());
+    m_HouseTexture = new VulkanTexture(TEXTURE_PATH);
     return m_HouseTexture->Load();
 }
 
@@ -1037,7 +1039,7 @@ bool VulkanRenderer::CreateModels()
 {
     SCOPE_FUNCTION_MILLI();
     
-    m_HouseModel = new VulkanModel(MODEL_PATH.c_str());
+    m_HouseModel = new VulkanModel(MODEL_PATH);
     return m_HouseModel->Load();
 }
     
